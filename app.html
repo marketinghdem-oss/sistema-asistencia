@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marcar Asistencia</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #f4f4f4; padding-top: 20px; box-sizing: border-box; margin: 0; }
+        main { width: 100%; max-width: 500px; padding: 10px; text-align: center; }
+        #userInfo { font-size: 1.1em; color: #333; margin-bottom: 20px; }
+        #actions { display: none; /* Oculto hasta que tengamos la ubicación */ }
+        #actions button { width: 90%; max-width: 300px; margin: 10px 0; padding: 20px; font-size: 1.2em; cursor: pointer; border: 1px solid #ccc; border-radius: 8px; background-color: white; transition: background-color 0.2s; }
+        #actions button:hover { background-color: #f0f0f0; }
+        #status { margin-top: 20px; padding: 15px; width: 90%; max-width: 470px; text-align: center; font-size: 1.2em; border-radius: 8px; box-sizing: border-box;}
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1 id="title">Marcar Asistencia</h1>
+        <p id="userInfo">Cargando...</p>
+        <div id="actions">
+            <button onclick="handleCheckin('Entrada')">➡️ Entrada</button>
+            <button onclick="handleCheckin('Inicio Almuerzo')">🍽️ Inicio Almuerzo</button>
+            <button onclick="handleCheckin('Fin Almuerzo')">☕ Fin Almuerzo</button>
+            <button onclick="handleCheckin('Salida')">⬅️ Salida</button>
+        </div>
+        <div id="status"></div>
+    </main>
+
+    <script type="module">
+        // --- CONFIGURACIÓN DE FIREBASE (YA INTEGRADA) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAF18LDKlYMJOMKhiCDEsFTJpu_A8wqomc",
+            authDomain: "sistema-asistencia-app-bb9e3.firebaseapp.com",
+            projectId: "sistema-asistencia-app-bb9e3",
+            storageBucket: "sistema-asistencia-app-bb9e3.appspot.com",
+            messagingSenderId: "292774790985",
+            appId: "1:292774790985:web:0b56264622dadb4848fc98",
+            measurementId: "G-CSQLC4K3GM"
+        };
+        
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        // --- Asegurarnos que la página esté cargada antes de ejecutar ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+
+            const statusElement = document.getElementById('status');
+            const userInfoElement = document.getElementById('userInfo');
+            const actionsDiv = document.getElementById('actions');
+            let authToken = null;
+            let userLocation = null;
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userInfoElement.textContent = `Bienvenido, ${user.email}`;
+                    authToken = await user.getIdToken();
+                    getUserLocation();
+                } else {
+                    window.location.href = 'index.html';
+                }
+            });
+
+            async function getUserLocation() {
+                statusElement.textContent = "Obteniendo tu ubicación...";
+                try {
+                    userLocation = await new Promise((resolve, reject) => {
+                        if (!navigator.geolocation) {
+                           return reject(new Error("Geolocalización no soportada."));
+                        }
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => resolve({ latitude: position.coords.latitude, longitude: position.coords.longitude }),
+                            (error) => reject(error),
+                            { timeout: 15000, enableHighAccuracy: true }
+                        );
+                    });
+                    statusElement.textContent = "Ubicación obtenida. Listo para marcar.";
+                    actionsDiv.style.display = 'block';
+                } catch (error) {
+                    statusElement.className = 'error';
+                    statusElement.textContent = 'Error: No se pudo obtener la ubicación. Revisa los permisos del navegador.';
+                }
+            }
+
+            window.handleCheckin = async function(type) {
+                if (!userLocation) {
+                    statusElement.className = 'error';
+                    statusElement.textContent = 'Aún no se ha obtenido la ubicación. Intenta de nuevo.';
+                    return;
+                }
+
+                actionsDiv.style.display = 'none';
+                statusElement.textContent = `Registrando '${type}'...`;
+                statusElement.className = '';
+
+                try {
+                    const response = await fetch('http://localhost:3000/marcar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+                        body: JSON.stringify({ checkinType: type, location: userLocation })
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.message);
+                    
+                    statusElement.className = 'success';
+                    statusElement.textContent = data.message;
+                } catch (error) {
+                    statusElement.className = 'error';
+                    statusElement.textContent = `Error: ${error.message}`;
+                    actionsDiv.style.display = 'block';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

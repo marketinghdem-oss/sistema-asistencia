@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión</title>
+    <style>
+        body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background-color: #f0f2f5; }
+        .login-container { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 300px; }
+        h1 { text-align: center; color: #333; }
+        .input-group { margin-bottom: 20px; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; }
+        #error-message { color: red; text-align: center; margin-top: 10px; min-height: 1em; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>Bienvenido</h1>
+        <div class="input-group">
+            <input type="email" id="email" placeholder="Correo electrónico" required>
+        </div>
+        <div class="input-group">
+            <input type="password" id="password" placeholder="Contraseña" required>
+        </div>
+        <button id="loginBtn">Ingresar</button>
+        <p id="error-message"></p>
+    </div>
+
+    <!-- SDK de Firebase (versión 9) -->
+    <script type="module">
+        // --- 1. CONFIGURACIÓN DE FIREBASE (YA CORREGIDA CON TUS DATOS) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAF18LDKlYMJOMKhiCDEsFTJpu_A8wqomc",
+            authDomain: "sistema-asistencia-app-bb9e3.firebaseapp.com",
+            projectId: "sistema-asistencia-app-bb9e3",
+            storageBucket: "sistema-asistencia-app-bb9e3.appspot.com",
+            messagingSenderId: "292774790985",
+            appId: "1:292774790985:web:0b56264622dadb4848fc98",
+            measurementId: "G-CSQLC4K3GM"
+        };
+
+        // --- 2. CONEXIÓN CON FIREBASE ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // --- 3. LÓGICA DE INICIO DE SESIÓN ---
+        const loginBtn = document.getElementById('loginBtn');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const errorMessage = document.getElementById('error-message');
+
+        loginBtn.addEventListener('click', async () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            errorMessage.textContent = '';
+
+            if (!email || !password) {
+                errorMessage.textContent = 'Por favor, ingresa correo y contraseña.';
+                return;
+            }
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                console.log("Usuario autenticado:", userCredential.user);
+                alert("¡Inicio de sesión exitoso!");
+                
+                // --- REDIRECCIÓN CORREGIDA ---
+                window.location.href = 'app.html';
+
+
+
+            } catch (error) {
+                errorMessage.textContent = 'Correo o contraseña incorrectos.';
+                console.error("Error de autenticación:", error.code);
+            }
+        });
+    </script>
+</body>
+</html>
