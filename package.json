@@ -1,16 +1,18 @@
 {
   "name": "sistema-asistencia",
   "version": "1.0.0",
-  "description": "",
+  "description": "Sistema de marcacion de asistencia",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^5.1.0"
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "firebase-admin": "^12.1.1",
+    "xlsx": "^0.18.5"
   }
 }
